@@ -39,7 +39,7 @@ void WindowPaint(const WindowState* ws) {
 
 
     // begin paint
-    FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
+    // FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
 
     // --- 1. The checkerboard
     int nsquares = 8;
@@ -59,21 +59,16 @@ void WindowPaint(const WindowState* ws) {
             // Figured this out through trial and error
             BOOL white_square = (col % 2 != 0) ^ (row % 2 == 0);
             
-            HBRUSH brush = (white_square)? br_white : br_black;
+            HBRUSH brush = (white_square)? br_sq_white : br_sq_black;
         
             FillRect(hdc, &ps.rcPaint, brush);
         }
     }
 
-    // --- 2. The chess pieces
-    POINT vertices[3] = {
-        {square_size / 2, 10},
-        {10, 50},
-        {50, 50}
-    };
-
+    // --- 2. The pieces
     SelectBrush(hdc, br_black);
-    Polygon(hdc, vertices, 3);
+
+    Ellipse(hdc, 10, 10, square_size - 10, square_size - 10);
 
     
     
@@ -106,8 +101,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
-    const char* class_name = "MinChess";
-    const char* window_text = "MinChess";
+    const char* class_name = "MinCheckers";
+    const char* window_text = "MinCheckers";
 
     // create window class
 
