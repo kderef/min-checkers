@@ -1,11 +1,16 @@
-#include <minwindef.h>
-#include <windef.h>
 #include <windows.h>
+#include <windowsx.h>
 #include <wingdi.h>
 #include <winuser.h>
 
+#include "checkers.c"
+
+static Board board;
+static BOOL white_to_move = 1;
+
 const int WINDOW_W = 600;
 const int WINDOW_H = WINDOW_W + 25;
+
 
 typedef struct {
     HWND hwnd;
@@ -15,15 +20,23 @@ typedef struct {
 } WindowState;
 
 void WindowPaint(const WindowState* ws) {
-    PAINTSTRUCT ps;
+    static PAINTSTRUCT ps;
     HDC hdc = BeginPaint(ws->hwnd, &ps);
 
     // brushes
-    COLORREF white = RGB(240, 240, 240);
-    COLORREF black = RGB(20, 20, 20);
+    static COLORREF color_square_white = RGB(238, 238, 210);
+    static COLORREF color_square_black = RGB(118, 150, 86);
+    static COLORREF color_white = RGB(255, 255, 255);
+    static COLORREF color_black = RGB(0, 0, 0);
 
-    HBRUSH br_white = CreateSolidBrush(white);
-    HBRUSH br_black = CreateSolidBrush(black);
+    HBRUSH br_sq_white = CreateSolidBrush(color_square_white);
+    HBRUSH br_sq_black = CreateSolidBrush(color_square_black);
+    HBRUSH br_white = CreateSolidBrush(color_white);
+    HBRUSH br_black = CreateSolidBrush(color_black);
+
+    HPEN pen_white = CreatePen(PS_SOLID, 2, color_white);
+    HPEN pen_black = CreatePen(PS_SOLID, 2, color_black);
+
 
     // begin paint
     FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
@@ -51,6 +64,17 @@ void WindowPaint(const WindowState* ws) {
             FillRect(hdc, &ps.rcPaint, brush);
         }
     }
+
+    // --- 2. The chess pieces
+    POINT vertices[3] = {
+        {square_size / 2, 10},
+        {10, 50},
+        {50, 50}
+    };
+
+    SelectBrush(hdc, br_black);
+    Polygon(hdc, vertices, 3);
+
     
     
     EndPaint(ws->hwnd, &ps);
@@ -132,6 +156,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
     }
 
     ShowWindow(hwnd, nShowCmd);
+
+    // Now setup the chess board
+    board_setup(&board);
     
     // message loop
 
