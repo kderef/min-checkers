@@ -28,7 +28,7 @@ void WindowPaint(const WindowState* ws) {
     // begin paint
     FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
 
-    // grid 0..60 -> 60..120
+    // --- 1. The checkerboard
     int nsquares = 8;
     int square_size = WINDOW_W / nsquares;
 
@@ -86,7 +86,18 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
     const char* window_text = "MinChess";
 
     // create window class
+
     WNDCLASS wc = {0};
+
+#if 0
+    SHSTOCKICONINFO sii = {0};
+    sii.cbSize = sizeof(SHSTOCKICONINFO);
+    SHGetStockIconInfo(SIID_SOFTWARE, SHGSI_ICON, &sii);
+    wc.hIcon = sii.hIcon;
+    SHGetStockIconInfo(SIID_SOFTWARE, SHGSI_ICON | SHGSI_SMALLICON, &sii);
+    wc.hIconSm = sii.hIcon;    
+#endif
+
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = class_name;
