@@ -1,24 +1,81 @@
+#include <minwindef.h>
+#include <windef.h>
 #include <windows.h>
+#include <wingdi.h>
 #include <winuser.h>
 
+const int WINDOW_W = 600;
+const int WINDOW_H = WINDOW_W + 25;
+
+typedef struct {
+    HWND hwnd;
+    UINT msg;
+    WPARAM wParam;
+    LPARAM lParam;
+} WindowState;
+
+void WindowPaint(const WindowState* ws) {
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(ws->hwnd, &ps);
+
+    // brushes
+    COLORREF white = RGB(240, 240, 240);
+    COLORREF black = RGB(20, 20, 20);
+
+    HBRUSH br_white = CreateSolidBrush(white);
+    HBRUSH br_black = CreateSolidBrush(black);
+
+    // begin paint
+    FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
+
+    // grid 0..60 -> 60..120
+    int nsquares = 8;
+    int square_size = WINDOW_W / nsquares;
+
+    for (int row = 0; row < nsquares; row++) {
+        int y = row * square_size;
+
+        for (int col = 0; col < nsquares; col++) {
+            int x = col * square_size;
+
+            ps.rcPaint.left = x;
+            ps.rcPaint.right = x + square_size;
+            ps.rcPaint.top = y;
+            ps.rcPaint.bottom = y + square_size;
+
+            // Figured this out through trial and error
+            BOOL white_square = (col % 2 != 0) ^ (row % 2 == 0);
+            
+            HBRUSH brush = (white_square)? br_white : br_black;
+        
+            FillRect(hdc, &ps.rcPaint, brush);
+        }
+    }
+    
+    
+    EndPaint(ws->hwnd, &ps);
+    // end paint
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    WindowState window_state = {
+        .hwnd = hwnd,
+        .msg = uMsg,
+        .wParam = wParam,
+        .lParam = lParam
+    };
+    
     switch (uMsg) {
         case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
+            WindowPaint(&window_state);
+            break;
 
-            // paint the window
-
-            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
-
-            EndPaint(hwnd, &ps);
-            
-        } break;
         case WM_DESTROY:
-        {
             PostQuitMessage(0);
-        } break;
+            break;
+
+        default:
+            break;
     }
     
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -38,17 +95,21 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
     
     // create a window
 
-    int width = 800;
-    int height = 600;
+
+    long window_style = WS_OVERLAPPED     |
+                        WS_CAPTION        |
+                        WS_SYSMENU        |
+                        WS_MINIMIZEBOX;
 
     HWND hwnd = CreateWindowEx(
         0,
         class_name,
         window_text,
-        WS_OVERLAPPEDWINDOW,
+        window_style,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        width, height,
+        WINDOW_W + 6,
+        WINDOW_H,
         NULL,
         NULL,
         hInstance,
