@@ -119,7 +119,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
         window_style,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        WINDOW_W + 6,
+        WINDOW_W + 6, // HACK: window width is not enough
         WINDOW_H,
         NULL,
         NULL,
