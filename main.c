@@ -1,3 +1,4 @@
+#include <debugapi.h>
 #include <windows.h>
 #include <windowsx.h>
 #include <wingdi.h>
@@ -5,11 +6,19 @@
 
 #include "checkers.c"
 
-static Board board;
 static BOOL white_to_move = 1;
 
 const int WINDOW_W = 600;
 const int WINDOW_H = WINDOW_W + 25;
+
+static const COLORREF
+    color_square_white = RGB(238, 238, 210),
+    color_square_black = RGB(118, 150, 86),
+    color_white = RGB(255, 255, 255),
+    color_black = RGB(0, 0, 0)
+;
+
+static HBRUSH br_sq_white, br_sq_black, br_white, br_black;
 
 
 typedef struct {
@@ -24,22 +33,16 @@ void WindowPaint(const WindowState* ws) {
     HDC hdc = BeginPaint(ws->hwnd, &ps);
 
     // brushes
-    static COLORREF color_square_white = RGB(238, 238, 210);
-    static COLORREF color_square_black = RGB(118, 150, 86);
-    static COLORREF color_white = RGB(255, 255, 255);
-    static COLORREF color_black = RGB(0, 0, 0);
-
-    HBRUSH br_sq_white = CreateSolidBrush(color_square_white);
-    HBRUSH br_sq_black = CreateSolidBrush(color_square_black);
-    HBRUSH br_white = CreateSolidBrush(color_white);
-    HBRUSH br_black = CreateSolidBrush(color_black);
 
     HPEN pen_white = CreatePen(PS_SOLID, 2, color_white);
     HPEN pen_black = CreatePen(PS_SOLID, 2, color_black);
 
+    HBRUSH old_brush;
+
 
     // begin paint
-    // FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
+
+    FillRect(hdc, &ps.rcPaint, br_sq_white);
 
     // --- 1. The checkerboard
     int nsquares = 8;
@@ -48,27 +51,37 @@ void WindowPaint(const WindowState* ws) {
     for (int row = 0; row < nsquares; row++) {
         int y = row * square_size;
 
-        for (int col = 0; col < nsquares; col++) {
+        for (int col = row % 2; col < nsquares; col += 2) {
             int x = col * square_size;
 
             ps.rcPaint.left = x;
             ps.rcPaint.right = x + square_size;
             ps.rcPaint.top = y;
             ps.rcPaint.bottom = y + square_size;
-
-            // Figured this out through trial and error
-            BOOL white_square = (col % 2 != 0) ^ (row % 2 == 0);
             
-            HBRUSH brush = (white_square)? br_sq_white : br_sq_black;
-        
-            FillRect(hdc, &ps.rcPaint, brush);
+            FillRect(hdc, &ps.rcPaint, br_sq_black);
+
+            // Draw the piece            
+            int board_x = (col / 2);
+            int board_y = row;
+
+            switch (board_get(board_x, board_y)) {
+                case PIECE_NONE: break;
+                case PIECE_BLACK:
+                    old_brush = SelectBrush(hdc, br_black);
+                    Ellipse(hdc, x + 10, y + 10, x + square_size - 10, y + square_size - 10);
+                    SelectBrush(hdc, old_brush);
+                    break;
+                case PIECE_WHITE:
+                    old_brush = SelectBrush(hdc, br_white);
+                    Ellipse(hdc, x + 10, y + 10, x + square_size - 10, y + square_size - 10);
+                    SelectBrush(hdc, old_brush);
+                    break;
+            }
         }
     }
 
     // --- 2. The pieces
-    SelectBrush(hdc, br_black);
-
-    Ellipse(hdc, 10, 10, square_size - 10, square_size - 10);
 
     
     
@@ -150,10 +163,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
         return 1;
     }
 
-    ShowWindow(hwnd, nShowCmd);
+    // Set brushes
+    br_sq_black = CreateSolidBrush(color_square_black);
+    br_sq_white = CreateSolidBrush(color_square_white);
+    br_white = CreateSolidBrush(color_white);
+    br_black = CreateSolidBrush(color_black);
 
-    // Now setup the chess board
-    board_setup(&board);
+    ShowWindow(hwnd, nShowCmd);
     
     // message loop
 
